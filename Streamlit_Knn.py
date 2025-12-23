@@ -1,28 +1,40 @@
 import streamlit as st
-import pickle
 import numpy as np
+import joblib
 
-# Load model
-with open("KNN_tas.pkl", "rb") as f:
-    model = pickle.load(f)
+# Load trained model and scaler
+model = joblib.load("KNN_tas.pkl")
+scaler = joblib.load("scaler.pkl")
 
-# Load scaler
-with open("scaler.pkl", "rb") as f:
-    scaler = pickle.load(f)
+st.set_page_config(page_title="KNN Purchase Prediction", layout="centered")
 
-st.title("KNN Prediction App")
+st.title("🛒 Social Network Ads Prediction")
+st.write("Predict whether a user will purchase a product based on Age and Salary.")
 
-st.write("Enter input values to get prediction")
-
-# Example inputs (change based on your dataset)
-f1 = st.number_input("Feature 1", value=0.0)
-f2 = st.number_input("Feature 2", value=0.0)
-f3 = st.number_input("Feature 3", value=0.0)
-f4 = st.number_input("Feature 4", value=0.0)
+# Input fields
+age = st.number_input("Enter Age", min_value=1, max_value=100, value=30)
+salary = st.number_input("Enter Estimated Salary", min_value=1000, max_value=200000, value=50000, step=1000)
 
 if st.button("Predict"):
-    input_data = np.array([[f1, f2, f3, f4]])
-    input_scaled = scaler.transform(input_data)
-    prediction = model.predict(input_scaled)
+    # Prepare input as array
+    input_data = np.array([[age, salary]])
 
-    st.success(f"Prediction: {prediction[0]}")
+    # Scale input
+    scaled_data = scaler.transform(input_data)
+
+    # Make prediction
+    prediction = model.predict(scaled_data)[0]
+
+    # Show result
+    if prediction == 1:
+        st.success("✅ The user is likely to PURCHASE the product.")
+    else:
+        st.warning("❌ The user is NOT likely to purchase the product.")
+
+    # Optional: show probability if available
+    if hasattr(model, "predict_proba"):
+        prob = model.predict_proba(scaled_data)[0][prediction]
+        st.write(f"Confidence: **{prob*100:.2f}%**")
+
+st.markdown("---")
+st.caption("Model: KNN | Features: Age, Estimated Salary")
